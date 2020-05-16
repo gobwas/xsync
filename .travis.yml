@@ -1,0 +1,11 @@
+language: go
+os:
+  - linux
+  - windows
+
+go:
+  - 1.14.x
+  - 1.x
+
+script:
+  go test -tags debug -v ./...

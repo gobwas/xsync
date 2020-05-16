@@ -1,4 +1,4 @@
-package xsync
+package container
 
 import (
 	"reflect"
@@ -22,9 +22,9 @@ func TestHeapSwap(t *testing.T) {
 		})
 		t.Run(test.name, func(t *testing.T) {
 			h := makeHeap(test.in...)
-			g := h.Pop()
-			if g.pos != -1 {
-				t.Fatal("Pop() did not reset wg.pos")
+			x := h.Pop()
+			if x.pos != -1 {
+				t.Fatal("Pop() did not reset item.pos")
 			}
 			verify(t, h)
 		})
@@ -39,12 +39,12 @@ func TestHeapPop(t *testing.T) {
 	}{
 		{
 			in:  []uint32{3, 1, 2, 5, 7, 10},
-			exp: []uint32{1, 2, 3, 5, 7, 10},
+			exp: []uint32{10, 7, 5, 3, 2, 1},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			h := makeHeap(test.in...)
-			act := tickets(h)
+			act := values(h)
 			if exp := test.exp; !reflect.DeepEqual(act, exp) {
 				t.Fatalf("unexpected Pop() sequence: %v; want %v", act, exp)
 			}
@@ -66,11 +66,11 @@ func TestHeapSort(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			h := makeHeap(test.in...)
-			act := tickets(h)
+			act := values(h)
 
 			exp := test.in
 			sort.Slice(exp, func(i, j int) bool {
-				return exp[i] < exp[j]
+				return exp[i] > exp[j]
 			})
 
 			if !reflect.DeepEqual(act, exp) {
@@ -80,49 +80,49 @@ func TestHeapSort(t *testing.T) {
 	}
 }
 
-func makeHeap(xs ...uint32) *heap {
-	data := make([]*wg, len(xs))
+func makeHeap(xs ...uint32) *genericHeap {
+	data := make([]genericHeapItem, len(xs))
 	for i, x := range xs {
-		data[i] = &wg{
-			t:   x,
-			pos: i,
+		data[i] = genericHeapItem{
+			pos:   i,
+			value: x,
 		}
 
 	}
-	h := &heap{data: data}
+	h := &genericHeap{data: data}
 	heapify(h)
 	return h
 }
 
-func verify(t *testing.T, h *heap) {
-	for exp, wg := range h.data {
-		if act := wg.pos; act != exp {
-			t.Fatalf("unexpected wg.pos: %d; want %d", act, exp)
+func verify(t *testing.T, h *genericHeap) {
+	for exp, item := range h.data {
+		if act := item.pos; act != exp {
+			t.Fatalf("unexpected item.pos: %d; want %d", act, exp)
 		}
 	}
 }
 
-func heapify(h *heap) {
-	p := parent(len(h.data) - 1) // Last parent node.
+func heapify(h *genericHeap) {
+	p := h.parent(len(h.data) - 1) // Last parent node.
 	for ; p >= 0; p-- {
 		h.siftDown(p)
 	}
 }
 
-func ticketsSorted(h *heap) []uint32 {
+func valuesSorted(h *genericHeap) []uint32 {
 	ret := make([]uint32, len(h.data))
 	for i := len(h.data) - 1; i >= 0; i-- {
-		g := h.Pop()
-		ret[i] = g.t
+		item := h.Pop()
+		ret[i] = item.value
 	}
 	return ret
 }
 
-func tickets(h *heap) []uint32 {
+func values(h *genericHeap) []uint32 {
 	ret := make([]uint32, 0, len(h.data))
 	for h.Size() > 0 {
-		g := h.Pop()
-		ret = append(ret, g.t)
+		item := h.Pop()
+		ret = append(ret, item.value)
 	}
 	return ret
 }

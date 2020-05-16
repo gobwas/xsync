@@ -7,6 +7,33 @@
 
 # Usage
 
+## xsync.WorkerGroup
+
+```go
+package main
+
+import (
+	"sync"
+
+	"github.com/gobwas/xsync"
+)
+
+func main() {
+	var wg xsync.WorkerGroup
+	wg.Exec(
+		xsync.Demand{
+			Priority: xsync.BytePriority(42),
+		},
+		xsync.TaskFunc(func(ctx *xsync.WorkerContext) {
+
+		}),
+	})
+	wg.Close()
+}
+```
+
+## xsync.Cond
+
 ```go
 package main
 
@@ -24,13 +51,17 @@ func main() {
 	mu.Lock()
 	for !condition {
 		cond.Wait(xsync.Demand{
-			Priority: 42,
+			Priority: xsync.BytePriority(42),
 		})
 	}
 	// action on condition.
 	mu.Unlock()
 }
 ```
+
+## examples
+
+For more examples please take a look into _examples_ folder.
 
 # Why?
 

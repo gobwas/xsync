@@ -3,6 +3,8 @@ package xsync
 import (
 	"sync"
 	"sync/atomic"
+
+	"github.com/gobwas/xsync/internal/buildtags"
 )
 
 // list is a ticket-based prioritized notification list.
@@ -32,7 +34,7 @@ import (
 type list struct {
 	mu sync.Mutex
 
-	heap heap
+	heap wgHeap
 	wait dcounter // Atomic counter of [ pending uint32, waiters uint32 ].
 
 	// done is the number of signaled/canceled tickets.
@@ -56,14 +58,14 @@ func (l *list) Add() (ticket uint32) {
 		1, // Number of tickets in transition (pending) from Add() to Wait().
 		1, // Ticket counter.
 	)
-	return uint32(t)
+	return t
 }
 
 // Wait blocks caller until notification received.
 func (l *list) Wait(ticket uint32, d Demand) bool {
 	g := acquireG()
 	g.t = ticket
-	g.d = d
+	g.p = d.Priority
 
 	l.mu.Lock()
 
@@ -76,7 +78,7 @@ func (l *list) Wait(ticket uint32, d Demand) bool {
 	l.wait.Add(minusOne, 0)
 	if l.inbox > 0 {
 		l.inbox--
-		if debug {
+		if buildtags.Debug {
 			if l.hookNotify != nil {
 				l.hookNotify(g)
 			}
@@ -87,7 +89,7 @@ func (l *list) Wait(ticket uint32, d Demand) bool {
 
 	// Insert ticket into the list and block until notification.
 	l.heap.Push(g)
-	if debug {
+	if buildtags.Debug {
 		if hook := l.hookInsert; hook != nil {
 			hook(g)
 		}
@@ -162,7 +164,7 @@ func (l *list) Notify() {
 	if g == nil && pending == 0 {
 		panic("xsync: inconsistent list state")
 	}
-	if debug {
+	if buildtags.Debug {
 		if l.hookNotify != nil {
 			l.hookNotify(g)
 		}
@@ -196,14 +198,14 @@ func (l *list) NotifyAll() {
 	prev := l.inbox
 	l.inbox = pending
 	h := l.heap
-	l.heap = heap{}
+	l.heap = wgHeap{}
 
 	atomic.AddUint32(&l.done, uint32(h.Size())+(l.inbox-prev))
 
 	l.mu.Unlock()
 
 	for _, g := range h.data {
-		if debug {
+		if buildtags.Debug {
 			if l.hookNotify != nil {
 				l.hookNotify(g)
 			}
@@ -217,11 +219,15 @@ var gp sync.Pool
 type wg struct {
 	c chan struct{}
 	t uint32
-	d Demand
+	p Priority
 
 	// pos is the position within the list's heap.
 	// It MUST be populated with h.mu held.
 	pos int
+}
+
+func (g *wg) less(b *wg) bool {
+	return compare(g, b) < 0
 }
 
 func compare(g1, g2 *wg) (c int) {
@@ -230,12 +236,16 @@ func compare(g1, g2 *wg) (c int) {
 	// change. We must detect the change of the generation of the current
 	// counter and release the lower priority tickets having previous
 	// generation.
-	if c = g1.d.compare(g2.d); c == 0 {
+	if c = comparePriority(g1.p, g2.p); c == 0 {
 		// Demands are equal so compare tickets but in reverse order – least
 		// ticket is the topmost item in the queue.
 		c = comparebits(g2.t, g1.t)
 	}
 	return
+}
+
+func invert(c int) int {
+	return ^c + 1
 }
 
 func (g *wg) notify() {

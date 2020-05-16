@@ -15,7 +15,7 @@ func BenchmarkDemandOptions(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		mu.Lock()
 		cond.Wait(Demand{
-			Priority: i,
+			Priority: BytePriority(i),
 			Cancel:   ch,
 		})
 		mu.Unlock()

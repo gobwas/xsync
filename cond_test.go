@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/gobwas/xsync/internal/buildtags"
 )
 
 func TestCondWaitCancelation(t *testing.T) {
@@ -425,7 +427,7 @@ type condwrap struct {
 }
 
 func skipWithoutDebug(t *testing.T) {
-	if !debug {
+	if !buildtags.Debug {
 		t.Skip("can run only with 'debug' build tag")
 	}
 }

@@ -9,9 +9,10 @@ import (
 	"sync"
 )
 
-// Errors returned by Cond.
+// Errors returned by package structs.
 var (
 	ErrCanceled = errors.New("xsync: canceled")
+	ErrClosed   = errors.New("xsync: closed")
 )
 
 // Cond contains logic of checking condition and waiting for a condition
