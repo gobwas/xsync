@@ -1,30 +1,30 @@
 package container
 
 type genericHeap struct {
-	data []genericHeapItem
+	data []*genericHeapItem
 }
 
-var genericHeapZeroItem genericHeapItem
+var genericHeapZeroItem *genericHeapItem
 
-func (h *genericHeap) Push(x genericHeapItem) {
+func (h *genericHeap) Push(x *genericHeapItem) {
 	i := len(h.data)
 	h.data = append(h.data, x)
 	x.pos = i
 	h.siftUp(i)
 }
 
-func (h *genericHeap) Pop() genericHeapItem {
+func (h *genericHeap) Pop() *genericHeapItem {
 	return h.remove(0)
 }
 
-func (h *genericHeap) Max() genericHeapItem {
+func (h *genericHeap) Max() *genericHeapItem {
 	if len(h.data) > 0 {
 		return h.data[0]
 	}
 	return genericHeapZeroItem
 }
 
-func (h *genericHeap) Remove(x genericHeapItem) bool {
+func (h *genericHeap) Remove(x *genericHeapItem) bool {
 	if h.data[x.pos] == x {
 		h.remove(x.pos)
 		return true
@@ -39,7 +39,7 @@ func (h *genericHeap) Size() int {
 func (h *genericHeap) Reserve(n int) {
 	m := len(h.data)
 	if m < n {
-		d := make([]genericHeapItem, m, n)
+		d := make([]*genericHeapItem, m, n)
 		copy(d, h.data)
 		h.data = d
 	}
@@ -53,7 +53,7 @@ func (h *genericHeap) IsEmpty() bool {
 	return len(h.data) == 0
 }
 
-func (h *genericHeap) remove(i int) genericHeapItem {
+func (h *genericHeap) remove(i int) *genericHeapItem {
 	n := h.Size()
 	if n == 0 {
 		return genericHeapZeroItem
@@ -64,6 +64,10 @@ func (h *genericHeap) remove(i int) genericHeapItem {
 	x.pos = -1
 	h.data[n-1] = genericHeapZeroItem
 	h.data = h.data[:n-1]
+
+	if i == n-1 {
+		return x
+	}
 
 	if p := h.parent(i); p < len(h.data) && h.data[p].less(h.data[i]) {
 		h.siftUp(i)

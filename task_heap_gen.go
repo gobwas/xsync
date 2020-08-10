@@ -66,6 +66,10 @@ func (h *taskHeap) remove(i int) task {
 	h.data[n-1] = taskHeapZeroItem
 	h.data = h.data[:n-1]
 
+	if i == n-1 {
+		return x
+	}
+
 	if p := h.parent(i); p < len(h.data) && h.data[p].less(h.data[i]) {
 		h.siftUp(i)
 	} else {

@@ -66,6 +66,10 @@ func (h *wgHeap) remove(i int) *wg {
 	h.data[n-1] = wgHeapZeroItem
 	h.data = h.data[:n-1]
 
+	if i == n-1 {
+		return x
+	}
+
 	if p := h.parent(i); p < len(h.data) && h.data[p].less(h.data[i]) {
 		h.siftUp(i)
 	} else {

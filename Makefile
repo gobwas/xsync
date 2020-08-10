@@ -24,7 +24,7 @@ generics:
 		cp internal/container/heap_template.go $${name}_heap_gen.go ; \
 		sed -i '' -e '1i\'$$'\n''// ${WARNING}' $${name}_heap_gen.go ; \
 		sed -i '' -e 's/container/xsync/g' $${name}_heap_gen.go ; \
-		sed -i '' -e 's/genericHeapItem/'$${type}'/g' $${name}_heap_gen.go ; \
+		sed -i '' -e 's/\*genericHeapItem/'$${type}'/g' $${name}_heap_gen.go ; \
 		sed -i '' -e 's/genericHeap/'$${name}Heap'/g' $${name}_heap_gen.go ; \
 	done
 

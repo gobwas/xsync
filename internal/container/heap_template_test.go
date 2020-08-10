@@ -6,6 +6,22 @@ import (
 	"testing"
 )
 
+func TestHeapRemoveLast(t *testing.T) {
+	var h genericHeap
+	x0 := &genericHeapItem{
+		value: 0,
+	}
+	x1 := &genericHeapItem{
+		value: 1,
+	}
+	h.Push(x0)
+	h.Push(x1)
+	h.Remove(x0)
+	if act, exp := h.Pop().value, x1.value; act != exp {
+		t.Fatal("unexpected item")
+	}
+}
+
 func TestHeapSwap(t *testing.T) {
 	for _, test := range []struct {
 		name string
@@ -40,6 +56,10 @@ func TestHeapPop(t *testing.T) {
 		{
 			in:  []uint32{3, 1, 2, 5, 7, 10},
 			exp: []uint32{10, 7, 5, 3, 2, 1},
+		},
+		{
+			in:  []uint32{3},
+			exp: []uint32{3},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -81,13 +101,12 @@ func TestHeapSort(t *testing.T) {
 }
 
 func makeHeap(xs ...uint32) *genericHeap {
-	data := make([]genericHeapItem, len(xs))
+	data := make([]*genericHeapItem, len(xs))
 	for i, x := range xs {
-		data[i] = genericHeapItem{
+		data[i] = &genericHeapItem{
 			pos:   i,
 			value: x,
 		}
-
 	}
 	h := &genericHeap{data: data}
 	heapify(h)
